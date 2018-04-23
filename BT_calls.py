@@ -307,9 +307,9 @@ if __name__ == "__main__":
         
         allDzDevices = requestDzAll(domoticzHardwareIdx)
         
-        if len(allDzDevices) == 0:
-            print("Failure to return devices from Domoticz, exit 99")
-            sys.exit(99)            
+        #if len(allDzDevices) == 0:
+        #    print("Failure to return devices from Domoticz, exit 99")
+        #    sys.exit(99)            
 
         for i in bl.get_available_devices():
             dzExistingDevice = False
