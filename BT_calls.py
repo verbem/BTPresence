@@ -272,7 +272,7 @@ def requestDzListHardware ():
     if response["status"] == "OK":
         for i in response["result"]:
             #print (i['Name'])
-            if i['Name'] == 'SmartThings':
+            if i['Name'] == 'SmartThingsBT':
                 idx = i['idx']
         if idx == None:
             requestDzCreateHardware()
@@ -280,7 +280,7 @@ def requestDzListHardware ():
     return idx
 
 def requestDzCreateHardware ():
-    response = domoticzrequest("http://" + domoticzserver + "/json.htm?type=command&param=addhardware&htype=15&port=1&name=SmartThings&enabled=true")
+    response = domoticzrequest("http://" + domoticzserver + "/json.htm?type=command&param=addhardware&htype=15&port=1&name=SmartThingsBT&enabled=true")
     return None
 
 def requestDzCreateDevice (name):
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     
     domoticzHardwareIdx = requestDzListHardware()
     if domoticzHardwareIdx == None:
-        print("Failure to get Hardware Idx for BT SmartThings, exit 99")
+        print("Failure to get Hardware Idx for SmartThingsBT, exit 99")
         sys.exit(99)
         
     while 1 == 1:
