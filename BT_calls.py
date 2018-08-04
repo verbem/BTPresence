@@ -275,13 +275,16 @@ def requestDzListHardware ():
             if i['Name'] == 'SmartThingsBT':
                 idx = i['idx']
         if idx == None:
-            requestDzCreateHardware()
+            idx = requestDzCreateHardware()
         
     return idx
 
 def requestDzCreateHardware ():
     response = domoticzrequest("http://" + domoticzserver + "/json.htm?type=command&param=addhardware&htype=15&port=1&name=SmartThingsBT&enabled=true")
-    return None
+    if response["status"] == "OK":
+        return response["idx"]
+    else:
+        return None
 
 def requestDzCreateDevice (name):
     unitCount = str(domoticzUnitcount)
@@ -299,6 +302,7 @@ if __name__ == "__main__":
     time.sleep(10)
     
     domoticzHardwareIdx = requestDzListHardware()
+    
     if domoticzHardwareIdx == None:
         print("Failure to get Hardware Idx for SmartThingsBT, exit 99")
         sys.exit(99)
@@ -318,14 +322,15 @@ if __name__ == "__main__":
                     dzExistingDevice = True
                     #print(j["Status"])
                     if j["Status"] == "Off":
-                        print("Presence detected of " + j["Name"])
+                        print( time.strftime("%c") + " Presence detected of " + j["Name"])
                         requestDzOn(j["idx"])
                         
             if not dzExistingDevice:
-                dzName = "(BT) (" + i["name"] + ") " + i["mac_address"]
-                print("Create presence device " + dzName)
-                domoticzUnitcount = domoticzUnitcount+1
-                requestDzCreateDevice(dzName)
+                if not i["name"].replace("-",":") == i["mac_address"]:
+                    dzName = "(BT) (" + i["name"] + ") " + i["mac_address"]
+                    print( time.strftime("%c") + " Create presence device " + dzName)
+                    domoticzUnitcount = domoticzUnitcount+1
+                    requestDzCreateDevice(dzName)
                 
         for i in allDzDevices:
             if "(BT)" in i["Name"]:
@@ -335,7 +340,7 @@ if __name__ == "__main__":
                         blPresentDevice = True
                 if not blPresentDevice:
                     if i["Status"] == "On":
-                        print("No Presence detected of " + i["Name"])
+                        print(time.strftime("%c") + " No Presence detected of " + i["Name"])
                         requestDzOff(i["idx"])
             
-        time.sleep(10)   
+        time.sleep(10)  
