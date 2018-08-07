@@ -247,7 +247,7 @@ def domoticzrequest (url):
 
 def requestDzAll (idx):
     global domoticzUnitcount
-    response = domoticzrequest('http://'+domoticzserver+'/json.htm?type=devices&filter=all&used=true&order=Name')
+    response = domoticzrequest('http://'+domoticzserver+'/json.htm?type=devices&filter=all&order=Name')
     result = []
     if response["status"] == "OK":
         for i in response['result']:
@@ -289,7 +289,7 @@ def requestDzCreateHardware ():
 def requestDzCreateDevice (name):
     unitCount = str(domoticzUnitcount)
     name = urllib.parse.quote_plus(name)
-    req = "http://" + domoticzserver + "/json.htm?type=command&param=addswitch&name=" + name + "&description=undefined&switchtype=0&lighttype=0&hwdid=" + domoticzHardwareIdx + "&housecode=80&unitcode=" + unitCount
+    req = "http://" + domoticzserver + "/json.htm?type=command&param=addswitch&name=" + name + "&description=undefined&used=false&switchtype=0&lighttype=0&hwdid=" + domoticzHardwareIdx + "&housecode=80&unitcode=" + unitCount
     response = domoticzrequest(req)
     print(response["status"])
     return None
