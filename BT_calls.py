@@ -292,6 +292,13 @@ def requestDzCreateDevice (name):
     req = "http://" + domoticzserver + "/json.htm?type=command&param=addswitch&name=" + name + "&description=undefined&used=false&switchtype=0&lighttype=0&hwdid=" + domoticzHardwareIdx + "&housecode=80&unitcode=" + unitCount
     response = domoticzrequest(req)
     print(response["status"])
+    if response["status" == "OK"]:
+        allDzDevices = requestDzAll(domoticzHardwareIdx)
+        if allDzDevices[-1]["Name"] == name:
+            idx = allDzDevices[-1]["idx"]
+            req = "http://" + domoticzserver + "/json.htm?type=setused&idx=" + idx + "&used=false"
+            response = domoticzrequest(req)
+            print("Setting unused for " + name + " status was " + response["status"])
     return None
 
 if __name__ == "__main__":
