@@ -247,7 +247,7 @@ def domoticzrequest (url):
 
 def requestDzAll (idx):
     global domoticzUnitcount
-    response = domoticzrequest('http://'+domoticzserver+'/json.htm?type=devices&filter=all&order=Name')
+    response = domoticzrequest('http://'+domoticzserver+'/json.htm?type=devices&filter=all')
     result = []
     if response["status"] == "OK":
         for i in response['result']:
@@ -288,17 +288,20 @@ def requestDzCreateHardware ():
 
 def requestDzCreateDevice (name):
     unitCount = str(domoticzUnitcount)
+    cName = name
     name = urllib.parse.quote_plus(name)
     req = "http://" + domoticzserver + "/json.htm?type=command&param=addswitch&name=" + name + "&description=undefined&used=false&switchtype=0&lighttype=0&hwdid=" + domoticzHardwareIdx + "&housecode=80&unitcode=" + unitCount
     response = domoticzrequest(req)
-    print(response["status"])
-    if response["status" == "OK"]:
-        allDzDevices = requestDzAll(domoticzHardwareIdx)
-        if allDzDevices[-1]["Name"] == name:
-            idx = allDzDevices[-1]["idx"]
-            req = "http://" + domoticzserver + "/json.htm?type=setused&idx=" + idx + "&used=false"
+    
+    if response["status"] == "OK":
+        dzDevices = requestDzAll(domoticzHardwareIdx)
+        
+        if dzDevices[-1]["Name"] == cName:
+            idx = dzDevices[-1]["idx"]
+            req = "http://" + domoticzserver + "/json.htm?type=command&param=setunused&idx=" + idx
             response = domoticzrequest(req)
-            print("Setting unused for " + name + " status was " + response["status"])
+            print("Setting unused for " + cName + " with idx " + idx + " status was " + response["status"])
+            
     return None
 
 if __name__ == "__main__":
