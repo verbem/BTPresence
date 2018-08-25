@@ -74,7 +74,7 @@ def requestDzCreateDevice (name):
             idx = dzDevices[-1]["idx"]
             req = "http://" + domoticzserver + "/json.htm?type=command&param=setunused&idx=" + idx
             response = domoticzrequest(req)
-            print("Setting unused for " + cName + " with idx " + idx + " status was " + response["status"])
+            print(time.strftime("%c") + " Setting unused for " + cName + " with idx " + idx + " status was " + response["status"])
             
     return None
 
@@ -83,15 +83,16 @@ if __name__ == "__main__":
     domoticzHardwareIdx = requestDzListHardware()
     
     if domoticzHardwareIdx == None:
-        print("Failure to get Hardware Idx for SmartThingsBT, exit 99")
+        print(time.strftime("%c") + " Failure to get Hardware Idx for SmartThingsBT, exit 99")
         sys.exit(99)
                        
         
-    while 1 == 1:
-      
-        allDzDevices = requestDzAll(domoticzHardwareIdx)
+    while True:
 
-        search_time = 10
+        # detect new devices
+        
+        search_time = 10      
+        allDzDevices = requestDzAll(domoticzHardwareIdx)
         blDevs = bluetooth.discover_devices(duration=search_time, flush_cache=True, lookup_names=True)
         
         for mac_address, name in blDevs:
@@ -99,12 +100,9 @@ if __name__ == "__main__":
             dzExistingDevice = False
             
             for j in allDzDevices:
+               
                 if mac_address in j["Name"]:
-                    dzExistingDevice = True
-                    
-                    if j["Status"] == "Off":
-                        print( time.strftime("%c") + " Presence detected of " + name)
-                        requestDzOn(j["idx"])
+                    dzExistingDevice = True                   
                         
             if not dzExistingDevice:
                 if not name.replace("-",":") == mac_address:
@@ -112,16 +110,21 @@ if __name__ == "__main__":
                     print( time.strftime("%c") + " Create presence device " + dzName)
                     domoticzUnitcount = domoticzUnitcount+1
                     requestDzCreateDevice(dzName)
-                
+                    
+        # Tracing of used devices in Domoticz
+        
         for i in allDzDevices:
-            if "(BT)" in i["Name"]:
-                blPresentDevice = False
-                for jmac, jname in blDevs:
-                    if jmac in i["Name"]:
-                        blPresentDevice = True
-                if not blPresentDevice:
+            if "(BT)" in i["Name"] and i["Used"] == 1:
+                BT, *btName, mac = i["Name"].split()
+                blPresentDevice = bluetooth.lookup_name(mac, timeout=20)
+
+                if blPresentDevice == None:
                     if i["Status"] == "On":
                         print(time.strftime("%c") + " No Presence detected of " + i["Name"])
                         requestDzOff(i["idx"])
+                else:                    
+                    if i["Status"] == "Off":
+                        print(time.strftime("%c") + " Presence detected of " + i["Name"])
+                        requestDzOn(i["idx"])
 
 
