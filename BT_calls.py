@@ -1,3 +1,5 @@
+# Version 1.01 Initial release
+
 global domoticzUnitcount
 
 import time
@@ -9,12 +11,13 @@ import json
 import pdb
 import urllib.parse
 import bluetooth
+#import subprocess
 
 # Settings for the domoticz server
 domoticzserver="127.0.0.1:8080"  # local host IP!!!!
 domoticzHardwareIdx=None
-domoticzUnitcount=0
-
+domoticzUnitcount=0       
+        
 def domoticzrequest (url):
     response = requests.get(url)
     return response.json()
@@ -116,15 +119,16 @@ if __name__ == "__main__":
         for i in allDzDevices:
             if "(BT)" in i["Name"] and i["Used"] == 1:
                 BT, *btName, mac = i["Name"].split()
+                #print(bluetooth.find_service(address=mac))
+                
                 blPresentDevice = bluetooth.lookup_name(mac, timeout=20)
 
                 if blPresentDevice == None:
                     if i["Status"] == "On":
                         print(time.strftime("%c") + " No Presence detected of " + i["Name"])
                         requestDzOff(i["idx"])
-                else:                    
-                    if i["Status"] == "Off":
-                        print(time.strftime("%c") + " Presence detected of " + i["Name"])
-                        requestDzOn(i["idx"])
+                elif i["Status"] == "Off":                
+                    print(time.strftime("%c") + " Presence detected of " + i["Name"])
+                    requestDzOn(i["idx"])
 
 
