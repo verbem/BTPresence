@@ -1,4 +1,4 @@
-# Version 1.01 Initial release
+# Version 2.00 l2ping version
 
 global domoticzUnitcount
 
@@ -11,7 +11,7 @@ import json
 import pdb
 import urllib.parse
 import bluetooth
-#import subprocess
+import subprocess
 
 # Settings for the domoticz server
 domoticzserver="127.0.0.1:8080"  # local host IP!!!!
@@ -34,6 +34,30 @@ def requestDzAll (idx):
                     if i["Unit"] >= domoticzUnitcount: domoticzUnitcount = i["Unit"] + 1
                 
     return result
+
+def btL2ping(mac_addr):
+    process = subprocess.Popen(['sudo', 'l2ping', '-c', '1', mac_addr], bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    rc = None
+    lastLine = None
+    
+    while True:
+        line = process.stdout.readline()
+        if not line:
+            break
+        else:
+            #print(mac_addr + " " + str(line))
+            lastLine = line
+            
+    if lastLine == None:
+        print (mac_addr + " not present (no output)")
+    else:
+        if str(lastLine).find('down') > 0:
+            #print (mac_addr + " not present (down)")
+            rc = None
+        else:
+            #print( mac_addr + " is present")
+            rc = True
+    return rc        
 
 def requestDzOn (idx):
     response = domoticzrequest("http://" + domoticzserver + "/json.htm?type=command&param=switchlight&idx=" + idx + "&switchcmd=On&level=0")
@@ -121,7 +145,8 @@ if __name__ == "__main__":
                 BT, *btName, mac = i["Name"].split()
                 #print(bluetooth.find_service(address=mac))
                 
-                blPresentDevice = bluetooth.lookup_name(mac, timeout=20)
+                #blPresentDevice = bluetooth.lookup_name(mac, timeout=20)
+                blPresentDevice = btL2ping(mac)
 
                 if blPresentDevice == None:
                     if i["Status"] == "On":
