@@ -1,4 +1,4 @@
-# Version 2.00 l2ping version
+# Version 2.01 l2ping version
 
 global domoticzUnitcount
 
@@ -36,7 +36,7 @@ def requestDzAll (idx):
     return result
 
 def btL2ping(mac_addr):
-    process = subprocess.Popen(['sudo', 'l2ping', '-c', '1', mac_addr], bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(['sudo', 'l2ping', '-c', '3', '-d', '1', mac_addr], bufsize=1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     rc = None
     lastLine = None
     
@@ -138,17 +138,16 @@ if __name__ == "__main__":
                     domoticzUnitcount = domoticzUnitcount+1
                     requestDzCreateDevice(dzName)
                     
-        # Tracing of used devices in Domoticz
+        # Tracing of activated (used) devices in Domoticz
         
         for i in allDzDevices:
             if "(BT)" in i["Name"] and i["Used"] == 1:
                 BT, *btName, mac = i["Name"].split()
-                #print(bluetooth.find_service(address=mac))
-                
-                #blPresentDevice = bluetooth.lookup_name(mac, timeout=20)
-                blPresentDevice = btL2ping(mac)
 
-                if blPresentDevice == None:
+                #blPresentDevice = bluetooth.lookup_name(mac, timeout=20)
+                #blPresentDevice = btL2ping(mac)
+
+                if btL2ping(mac) == None:
                     if i["Status"] == "On":
                         print(time.strftime("%c") + " No Presence detected of " + i["Name"])
                         requestDzOff(i["idx"])
