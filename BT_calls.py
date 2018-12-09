@@ -1,14 +1,8 @@
-# Version 2.01 l2ping version
-
-global domoticzUnitcount
+# Version 2.02 l2ping implement with grace period when ping is gving not connected
 
 import time
 import sys
-import re
-import os
 import requests
-import json
-import pdb
 import urllib.parse
 import bluetooth
 import subprocess
@@ -16,7 +10,7 @@ import subprocess
 # Settings for the domoticz server
 domoticzserver="127.0.0.1:8080"  # local host IP!!!!
 domoticzHardwareIdx=None
-domoticzUnitcount=0       
+domoticzUnitcount=0
         
 def domoticzrequest (url):
     response = requests.get(url)
@@ -24,6 +18,7 @@ def domoticzrequest (url):
 
 def requestDzAll (idx):
     global domoticzUnitcount
+    
     response = domoticzrequest('http://'+domoticzserver+'/json.htm?type=devices&filter=all')
     result = []
     if response["status"] == "OK":
@@ -60,11 +55,11 @@ def btL2ping(mac_addr):
     return rc        
 
 def requestDzOn (idx):
-    response = domoticzrequest("http://" + domoticzserver + "/json.htm?type=command&param=switchlight&idx=" + idx + "&switchcmd=On&level=0")
+    domoticzrequest("http://" + domoticzserver + "/json.htm?type=command&param=switchlight&idx=" + idx + "&switchcmd=On&level=0")
     return None
 
 def requestDzOff (idx):
-    response = domoticzrequest("http://" + domoticzserver + "/json.htm?type=command&param=switchlight&idx=" + idx + "&switchcmd=Off&level=0")
+    domoticzrequest("http://" + domoticzserver + "/json.htm?type=command&param=switchlight&idx=" + idx + "&switchcmd=Off&level=0")
     return None
 
 def requestDzListHardware ():
@@ -106,53 +101,62 @@ def requestDzCreateDevice (name):
     return None
 
 if __name__ == "__main__":
- 
+    if len(sys.argv) > 1:
+        print(sys.argv[1])
+        domoticzserver = sys.argv[1]
+        
+    domoticzBTDevices = {} 
     domoticzHardwareIdx = requestDzListHardware()
     
     if domoticzHardwareIdx == None:
         print(time.strftime("%c") + " Failure to get Hardware Idx for SmartThingsBT, exit 99")
         sys.exit(99)
-                       
         
     while True:
 
         # detect new devices
         
-        search_time = 10      
         allDzDevices = requestDzAll(domoticzHardwareIdx)
-        blDevs = bluetooth.discover_devices(duration=search_time, flush_cache=True, lookup_names=True)
-        
-        for mac_address, name in blDevs:
-            
+        #btDevs = bluetooth.discover_devices(duration=search_time, flush_cache=True, lookup_names=True)        
+        #btDevs = bluetooth.discover_devices(flush_cache=True, lookup_names=True)
+              
+        for mac_address, name in bluetooth.discover_devices(flush_cache=True, lookup_names=True):            
             dzExistingDevice = False
             
-            for j in allDzDevices:
-               
+            for j in allDzDevices:               
                 if mac_address in j["Name"]:
                     dzExistingDevice = True                   
                         
-            if not dzExistingDevice:
+            if not dzExistingDevice:                
                 if not name.replace("-",":") == mac_address:
                     dzName = "(BT) (" + name + ") " + mac_address
                     print( time.strftime("%c") + " Create presence device " + dzName)
                     domoticzUnitcount = domoticzUnitcount+1
                     requestDzCreateDevice(dzName)
+                    domoticzBTDevices[mac_address] = 0
+            else:
+                if not mac_address in domoticzBTDevices:
+                    domoticzBTDevices[mac_address] = 0                   
                     
-        # Tracing of activated (used) devices in Domoticz
-        
+        # Tracing of activated (used) devices in Domoticz        
         for i in allDzDevices:
             if "(BT)" in i["Name"] and i["Used"] == 1:
                 BT, *btName, mac = i["Name"].split()
 
-                #blPresentDevice = bluetooth.lookup_name(mac, timeout=20)
-                #blPresentDevice = btL2ping(mac)
-
                 if btL2ping(mac) == None:
                     if i["Status"] == "On":
-                        print(time.strftime("%c") + " No Presence detected of " + i["Name"])
-                        requestDzOff(i["idx"])
+                        
+                        if mac in domoticzBTDevices:
+                            if domoticzBTDevices[mac] > 4:
+                                print(time.strftime("%c") + " No Presence detected of " + i["Name"])
+                                requestDzOff(i["idx"])
+                                domoticzBTDevices[mac] = 0
+                            else:
+                                domoticzBTDevices[mac] = domoticzBTDevices[mac] +1
+                        else:
+                            domoticzBTDevices[mac] = 1
+                            
                 elif i["Status"] == "Off":                
                     print(time.strftime("%c") + " Presence detected of " + i["Name"])
                     requestDzOn(i["idx"])
-
-
+                    domoticzBTDevices[mac] = 0
