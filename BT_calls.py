@@ -8,7 +8,7 @@ import bluetooth
 import subprocess
 
 # Settings for the domoticz server
-domoticzserver="127.0.0.1:8080"  # local host IP!!!! not a remlote IP, it will not work
+domoticzserver="127.0.0.1:8080"  # local host IP!!!
 domoticzHardwareIdx=None
 domoticzUnitcount=0
         
